@@ -1,7 +1,18 @@
 const todoInput = document.querySelector('#todo-input');
 const todoList = document.querySelector('#todo-list');
 
-const creatTodo = function () {
+//로컬 스토리지에서 데이터를 꺼내오기
+//JSON.parse : 문자열로 변환된 데이터가 JSON데이터 포멧을 가지고 있다면 원본 데이터 형태로 다시 변환
+const savedTodoList = JSON.parse(localStorage.getItem('saved-items'));
+
+const creatTodo = function (storageData) {
+  //위 매개 변수 전달 인자를 받기 위한 변수 storageData
+  let todoContents = todoInput.value;
+  if (storageData) {
+    //만약 현재 매개변수로 전달 받는 스토리지 데이터가 존재한다면
+    todoContents = storageData.contents; //todoContents를 스토리지 데이터에 콘텐츠로 변환
+  }
+
   const newLi = document.createElement('li'); //createEleent를 사용하여 dom의 노드를 생성
   const newSpan = document.createElement('span');
   const newBtn = document.createElement('button');
@@ -13,12 +24,24 @@ const creatTodo = function () {
     saveItemsFn();
   });
 
+  //리스트에서 취소 줄이 그어져있는 상태에서 새로고침을 했을 때 그 취소 줄이 없어지지 않도록 하는 조건문
+  if (storageData?.complete) {
+    //?undefined인 storageData 값에 complete를 찾으려고 시도를 해서 에러 발생함
+    //위와 같은 에러가 나오지 않기위해 ?(옵셔널체이닝)를 사용
+    //? 사용하게 되면 storageData가 undefined거나 다른 값인 경우에는 complete를 찾지 않음
+    ////if (storageData && storageData.complete) {와 같음
+
+    //complete 상태가 true라면, 즉 취소 줄이 그어져있는 상태라면
+    newLi.classList.add('complete');
+  }
+
   newLi.addEventListener('dblclick', () => {
     //버튼을 더블 클릭 했을 때 리스트 삭제
     newLi.remove();
+    saveItemsFn(); //더블 클릭하여 리스트를 삭제한 후 새로고침 했을 때 남아있지 않도록 하기 위해 함수 호출
   });
 
-  newSpan.textContent = todoInput.value;
+  newSpan.textContent = todoContents;
   newLi.appendChild(newBtn);
   newLi.appendChild(newSpan); //newLi의 자식노드로 newSpan을 설정
   todoList.appendChild(newLi); //ul 태그 변수 todoList의 자식 노드로 newLi를 설정
@@ -39,6 +62,7 @@ const deleteAll = function () {
   for (let i = 0; i < liList.length; i++) {
     liList[i].remove();
   }
+  saveItemsFn(); //전체 삭제를 헀음에도 불구하고 새로고침 했을 때 리스트가 남아있을 것을 대비
 };
 
 //리스트 데이터 저장을 위한 함수
@@ -57,7 +81,30 @@ const saveItemsFn = function () {
     };
     savesItems.push(todoObj); //배열 안에 객체가 push
   }
-  //각 리스트를 저장하고 있는 배열을 로컬스토리지에 저장
-  //JSON : 객체나 배열 자체를 문자열로 변환해줄 수 있는 데이터 포멧
-  localStorage.setItem('saved-items', JSON.stringify(savesItems));
+
+  //아래 코든느 삼항 연산자
+  // 조건문 ? 조건문이 성립할 때 실행 : 조건문이 성립안할 때 실행
+  savesItems.length === 0
+    ? localStorage.removeItem('saved-items')
+    : localStorage.setItem('saved-items', JSON.stringify(savesItems));
+
+  //만약 로컬스토리지가 빈 배열이라면
+  // if (savesItems.length === 0) {
+  //   localStorage.removeItem('saved-items'); //빈 배열 메모리 공간 모두 삭제
+  // } else {
+  //   //각 리스트를 저장하고 있는 배열을 로컬스토리지에 저장
+  //   //JSON : 객체나 배열 자체를 문자열로 변환해줄 수 있는 데이터 포멧
+  //   localStorage.setItem('saved-items', JSON.stringify(savesItems));
+  // }
 };
+
+//호이스팅이 발생하지 않도록 하기 위해서 표현식 함수인 createTodo 함수 아래쪽으로 코드 배치
+//savedTodoList에서 saved-items라는 키를 가진 데이터가 존재 하는지 안하는지 확인하는 조건문
+//로컬스토리지에서 가져온 데이터가 존재한다면 실행
+if (savedTodoList) {
+  //savedTodoList는 배열이므로 이 배열의 길이만큼 반복
+  for (let i = 0; i < savedTodoList.length; i++) {
+    //밑 코드를 사용하여 creatTodo 함수로 매개 변수 전달인자 넣어줌
+    creatTodo(savedTodoList[i]);
+  }
+}
