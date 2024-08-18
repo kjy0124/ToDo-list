@@ -111,6 +111,7 @@ if (savedTodoList) {
 
 const weatherSearch = function (position) {
   console.log(position.latitude);
+  console.log(position.longitude);
   const openweatherRes = fetch(
     `https://api.openweathermap.org/data/2.5/onecall?lat=${position.latitude}&lon=${position.longitude}&appid=65092784818426e0fce6d8b68d6844fa`
   );
