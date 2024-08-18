@@ -108,3 +108,28 @@ if (savedTodoList) {
     creatTodo(savedTodoList[i]);
   }
 }
+
+const weatherSearch = function (position) {
+  console.log(position.latitude);
+  const openweatherRes = fetch(
+    `https://api.openweathermap.org/data/2.5/onecall?lat=${position.latitude}&lon=${position.longitude}&appid=65092784818426e0fce6d8b68d6844fa`
+  );
+  console.log(openweatherRes);
+};
+
+//현재 위치 정보 가져오기
+const accessToGeo = function (position) {
+  const positionObj = {
+    latitude: position.coords.latitude,
+    longitude: position.coords.longitude,
+  };
+  weatherSearch(positionObj);
+};
+
+const askForLocation = function () {
+  //콜백함수로 객체를 유일한 매개변수로 받음
+  navigator.geolocation.getCurrentPosition(accessToGeo, (err) => {
+    console.log('에러가 발생하였습니다.');
+  });
+};
+askForLocation();
