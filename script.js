@@ -51,7 +51,8 @@ const creatTodo = function (storageData) {
 
 const keyCodeCheck = function () {
   //엔터키 누를 때 밑의 조건문 실행
-  if (window.event.keyCode === 13 && todoInput.value !== '') {
+  //trim() : 빈 문자열 즉 공백만 입력했을 때 리스트로 반영되지 않도록 함
+  if (window.event.keyCode === 13 && todoInput.value.trim() !== '') {
     creatTodo();
   }
 };
@@ -109,20 +110,71 @@ if (savedTodoList) {
   }
 }
 
-const weatherSearch = function (position) {
-  console.log(position.latitude);
-  console.log(position.longitude);
+const weatherDataActive = function ({ location, weather }) {
+  const weatherList = [
+    'Clear',
+    'Clouds',
+    'Drizzle',
+    'Rain',
+    'Snow',
+    'Tunderstorm',
+  ];
+
+  weather = weatherList.includes(weather) ? weather : 'Fog';
+  //h1 이름을 현재 지역 이름으로 바꾸기 위해 html에서 불러옴
+  const locationNameTag = document.querySelector('#location-name-tag');
+  locationNameTag.textContent = location;
+  //현재 날씨에 맞게 배경 설정
+  document.body.style.backgroundImage = `url('./images/${weather}.jpg')`;
+
+  if (
+    savedweatherData ||
+    savedweatherData.location !== location ||
+    savedweatherData.weather !== weather
+  ) {
+    localStorage.setItem(
+      'saved-weather',
+      JSON.stringify({ location, weather })
+    );
+  }
+};
+
+// 로컬 스토리지에서 저장된 날씨 데이터를 가져오기
+const savedweatherData = JSON.parse(localStorage.getItem('saved-weather'));
+
+//여기서도 구조분해할당을 사용하여 position 없애고 {latitude, longitude}를 바로 받아옴
+const weatherSearch = function ({ latitude, longitude }) {
   const openweatherRes = fetch(
-    `https://api.openweathermap.org/data/2.5/weather?lat=${position.latitude}&lon=${position.longitude}&appid=65092784818426e0fce6d8b68d6844fa`
-  );
-  console.log(openweatherRes);
+    //api 요청
+    `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=65092784818426e0fce6d8b68d6844fa`
+  )
+    .then((res) => {
+      return res.json();
+    })
+    .then((json) => {
+      const weatherData = {
+        location: json.name,
+        weather: json.weather[0].main,
+      };
+      weatherDataActive(weatherData);
+    })
+    //json.name : 각 지역의 이름
+    //json.weather[0].description : weather은 배열로 이루어져있으며, 배경에 반영하기 위해 선언
+    //위 then은 펜딩상태일 때까지는 기다리다가 펜딩 상태가 끝나면 그 떄 응답을 받아옴
+    .catch((err) => {
+      console.error(err);
+      // .catch : then과 항상 붙어다니며 요청을 보냈을 때 요청이 제대로 안이루어졌을 때 그 원인이 무엇인지 알게 함
+    });
 };
 
 //현재 위치 정보 가져오기
-const accessToGeo = function (position) {
+const accessToGeo = function ({ coords }) {
+  //구조분해할당을 사용하여 position에서 coords로 단축
+  const { latitude, longitude } = coords;
   const positionObj = {
-    latitude: position.coords.latitude,
-    longitude: position.coords.longitude,
+    //shorthand property : 객체의 키와 이름이 같다면 굳이 latitude : latitude 이런 식으로 입력할 필요 없음
+    latitude,
+    longitude,
   };
   weatherSearch(positionObj);
 };
@@ -134,3 +186,59 @@ const askForLocation = function () {
   });
 };
 askForLocation();
+
+/*
+구조분해할당 : 구조화가 돼있는 배열, 객체와 같은 데이터를 destructuring(분해) 시켜, 
+각각의 변수에 담는 것
+let rar = [1, 2]
+let[one, two] = arr
+
+이 때 one과 two는 변수명
+console.log(one, two) 결과는 1과 2
+
+객체 구조분해할당 방법
+let obj = {name: "otter", genter: "male"}
+let {name, gender} = obj
+console.log(name, gender) 결과는 otter과 male
+
+객체 구조분해할당에서 key 값을 변경하고 싶을 때는
+let {name:Newname, gender: Newgender} = obj
+라고 입력
+
+
+spread 연산자 : 하나로 뭉쳐있는 값들의 집합을 전개해주는 연산자
+작성 방법 : ...
+
+let arr = [1, 2, 3, 4, 5]
+console.log(...arr) 결과는 1, 2, 3, 4, 5
+
+문자열에서의 spread 연산자
+
+let str = "Hello"
+console.log(...str)
+결과는 "H" "e" "l"  "l" "o"
+
+Rest Parameter
+
+let origin = { 
+name: "otter",
+age: 25,
+petName: "cherry",
+hobby: "playing game"
+};
+const essentialData = {
+name: origin.name,
+age: origin.age
+};
+
+이 코드를
+const {petName, hobby, ...rest} = origin
+이렇게 사용하면 됨
+
+이 코드는 구조분해할당 코드와 흡사
+console.log(petName) 결과는 cherry
+console.log(hobby) 결과는 playing game
+console.log(...rest) 결과는 {name: "otter", age:25}라고 나옴
+rest(나머지) 파라미터는 필요한 데이터만 가져옴.
+여기서 rest는 꼭 rest가 아니어도 됨. 단지 변수일 뿐임
+ */
