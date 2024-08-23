@@ -5,6 +5,9 @@ const todoList = document.querySelector('#todo-list');
 //JSON.parse : 문자열로 변환된 데이터가 JSON데이터 포멧을 가지고 있다면 원본 데이터 형태로 다시 변환
 const savedTodoList = JSON.parse(localStorage.getItem('saved-items'));
 
+// 로컬 스토리지에서 저장된 날씨 데이터를 가져오기
+const savedweatherData = JSON.parse(localStorage.getItem('saved-weather'));
+
 const creatTodo = function (storageData) {
   //위 매개 변수 전달 인자를 받기 위한 변수 storageData
   let todoContents = todoInput.value;
@@ -128,7 +131,7 @@ const weatherDataActive = function ({ location, weather }) {
   document.body.style.backgroundImage = `url('./images/${weather}.jpg')`;
 
   if (
-    savedweatherData ||
+    !savedweatherData ||
     savedweatherData.location !== location ||
     savedweatherData.weather !== weather
   ) {
@@ -138,9 +141,6 @@ const weatherDataActive = function ({ location, weather }) {
     );
   }
 };
-
-// 로컬 스토리지에서 저장된 날씨 데이터를 가져오기
-const savedweatherData = JSON.parse(localStorage.getItem('saved-weather'));
 
 //여기서도 구조분해할당을 사용하여 position 없애고 {latitude, longitude}를 바로 받아옴
 const weatherSearch = function ({ latitude, longitude }) {
@@ -186,7 +186,9 @@ const askForLocation = function () {
   });
 };
 askForLocation();
-
+if (savedweatherData) {
+  weatherDataActive(savedweatherData);
+}
 /*
 구조분해할당 : 구조화가 돼있는 배열, 객체와 같은 데이터를 destructuring(분해) 시켜, 
 각각의 변수에 담는 것
